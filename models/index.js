@@ -1,13 +1,15 @@
 const User = require('./User');
-const Gallery = require('./Gallery');
-const Painting = require('./Painting');
+const Post = require('./Post');
 
-Gallery.hasMany(Painting, {
-  foreignKey: 'gallery_id',
+// Define associations
+User.hasMany(Post, {
+  foreignKey: 'user_id',
+  onDelete: 'CASCADE' // This ensures that when a user is deleted, all their posts are also deleted
 });
 
-Painting.belongsTo(Gallery, {
-  foreignKey: 'gallery_id',
+Post.belongsTo(User, {
+  foreignKey: 'user_id'
 });
 
-module.exports = { User, Gallery, Painting };
+module.exports = { User, Post };
+

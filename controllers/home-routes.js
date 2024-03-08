@@ -1,84 +1,49 @@
 const router = require('express').Router();
 const { Gallery, Painting } = require('../models');
-// Import the custom middleware
 const withAuth = require('../utils/auth');
 
-// GET all galleries for homepage
+// Homepage route
 router.get('/', async (req, res) => {
   try {
-    const dbGalleryData = await Gallery.findAll({
+    const galleries = await Gallery.findAll({
       include: [
         {
           model: Painting,
-          attributes: ['filename', 'description'],
+          attributes: ['id', 'title', 'artist', 'exhibition_date'],
         },
       ],
     });
 
-    const galleries = dbGalleryData.map((gallery) =>
-      gallery.get({ plain: true })
-    );
-
-    res.render('homepage', {
-      galleries,
-      loggedIn: req.session.loggedIn,
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+    res.render('homepage', { galleries, loggedIn: req.session.loggedIn });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// GET one gallery
-// Use the custom middleware before allowing the user to access the gallery
+// Gallery route (requires authentication)
 router.get('/gallery/:id', withAuth, async (req, res) => {
   try {
-    const dbGalleryData = await Gallery.findByPk(req.params.id, {
+    const gallery = await Gallery.findByPk(req.params.id, {
       include: [
         {
           model: Painting,
-          attributes: [
-            'id',
-            'title',
-            'artist',
-            'exhibition_date',
-            'filename',
-            'description',
-          ],
+          attributes: ['id', 'title', 'artist', 'exhibition_date'],
         },
       ],
     });
 
-    const gallery = dbGalleryData.get({ plain: true });
+    if (!gallery) {
+      return res.status(404).json({ message: 'Gallery not found' });
+    }
+
     res.render('gallery', { gallery, loggedIn: req.session.loggedIn });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 });
 
-// GET one painting
-// Use the custom middleware before allowing the user to access the painting
-router.get('/painting/:id', withAuth, async (req, res) => {
-  try {
-    const dbPaintingData = await Painting.findByPk(req.params.id);
-
-    const painting = dbPaintingData.get({ plain: true });
-
-    res.render('painting', { painting, loggedIn: req.session.loggedIn });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
-  }
-});
-
-router.get('/login', (req, res) => {
-  if (req.session.loggedIn) {
-    res.redirect('/');
-    return;
-  }
-
-  res.render('login');
-});
+// Other routes...
 
 module.exports = router;
