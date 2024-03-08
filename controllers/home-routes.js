@@ -1,49 +1,23 @@
 const router = require('express').Router();
-const { Gallery, Painting } = require('../models');
-const withAuth = require('../utils/auth');
+const { Blog } = require('../models');
 
-// Homepage route
+// GET all blog posts for homepage
 router.get('/', async (req, res) => {
   try {
-    const galleries = await Gallery.findAll({
-      include: [
-        {
-          model: Painting,
-          attributes: ['id', 'title', 'artist', 'exhibition_date'],
-        },
-      ],
+    const dbBlogData = await Blog.findAll({
+      include: [{ model: User, attributes: ['username'] }], // Include username of the creator
     });
 
-    res.render('homepage', { galleries, loggedIn: req.session.loggedIn });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    const blogs = dbBlogData.map((blog) => blog.get({ plain: true }));
+
+    res.render('homepage', { blogs, loggedIn: req.session.loggedIn });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
   }
 });
 
-// Gallery route (requires authentication)
-router.get('/gallery/:id', withAuth, async (req, res) => {
-  try {
-    const gallery = await Gallery.findByPk(req.params.id, {
-      include: [
-        {
-          model: Painting,
-          attributes: ['id', 'title', 'artist', 'exhibition_date'],
-        },
-      ],
-    });
-
-    if (!gallery) {
-      return res.status(404).json({ message: 'Gallery not found' });
-    }
-
-    res.render('gallery', { gallery, loggedIn: req.session.loggedIn });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// Other routes...
+// Other routes for viewing individual blog posts...
 
 module.exports = router;
+
